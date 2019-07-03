@@ -5,9 +5,10 @@
 {         onto a Component symbol                                              }
 {                                                                              }
 { To use the script:                                                           }
-{  1/ Execute the ImportPins procedure and the Pins Importer dialog appears    }
-{  2/ Click on browse button to load in the CSV file of schematic pins data.   }
-{  3/ Click on the Update Mapping button to refresh the links between          }
+{  1/ Select the component in schematic that is going to be updated            }
+{  2/ Execute the ImportPins procedure and the Pins Importer dialog appears    }
+{  3/ Click on browse button to load in the CSV file of schematic pins data.   }
+{  4/ Click on the Update Mapping button to refresh the links between          }
 {     text fields and pin properties, then click on Execute button to generate }
 {     the pin length data for the selected component                           }
 {                                                                              }
@@ -139,8 +140,7 @@ Begin
          While AComponent <> Nil Do
          Begin
              CompDes := AComponent.Designator.Text;
-
-             If CompDes = 'U1' Then
+             If AComponent.Selection Then
                  Try
                      PIterator := AComponent.SchIterator_Create;
                      PIterator.AddFilter_ObjectSet(MkSet(ePin));
