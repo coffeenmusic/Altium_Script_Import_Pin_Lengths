@@ -1,18 +1,16 @@
 {..............................................................................}
-{ Summary Pins Importer script.
-{         The ImportPinsForm is the main form.                                 }
-{         You need a Sch Pins Data CSV file to import and create new Pins      }
-{         onto a SchLib document                                               }
+{ Summary Pin Package Lengths Importer script.
+{         The ImportPinPackLenForm is the main form.                           }
+{         You need a Pin Package Length Data CSV file to import                }
+{         onto a Component symbol                                              }
 {                                                                              }
 { To use the script:                                                           }
 {  1/ Execute the ImportPins procedure and the Pins Importer dialog appears    }
 {  2/ Click on browse button to load in the CSV file of schematic pins data.   }
 {  3/ Click on the Update Mapping button to refresh the links between          }
-{     text fields and pin properties, then click on Import button to generate  }
-{     a list of different pins on a Sch library page.                          }
-{                                                                              } 
-{ Version 1.1 Location problem resolved for DXP 2004 SP2 onwards               }
-{ Copyright (c) 2004 by Altium Limited                                         }
+{     text fields and pin properties, then click on Execute button to generate }
+{     the pin length data for the selected component                           }
+{                                                                              }
 {..............................................................................}
 
 {..............................................................................}
@@ -112,9 +110,76 @@ End;
 {..............................................................................}
 
 {..............................................................................}
+Function UpdatePinLength(CSVBall: TPCBString, CSVLenStr: String): Boolean;
+Var
+     CurrentSch       : ISch_Sheet             ;
+     Iterator         : ISch_Iterator          ;
+     PIterator        : ISch_Iterator          ;
+     AComponent       : ISch_Component         ;
+     Pin              : ISch_Pin               ;
+     CompDes          : TPCBString             ;
+     CompBall         : TPCBString             ;
+     CSVLenCoord      : Integer                ;
+Begin
+     Result := False;
+
+     // Check if schematic server exists or not.
+     If SchServer = Nil Then Exit;
+
+     // Obtain the current schematic document interface.
+     CurrentSch := SchServer.GetCurrentSchDocument;
+     If CurrentSch = Nil Then Exit;
+
+     // Look for components only
+     Iterator := CurrentSch.SchIterator_Create;
+     Iterator.AddFilter_ObjectSet(MkSet(eSchComponent));
+
+     Try
+         AComponent := Iterator.FirstSchObject;
+         While AComponent <> Nil Do
+         Begin
+             CompDes := AComponent.Designator.Text;
+
+             If CompDes = 'U1' Then
+                 Try
+                     PIterator := AComponent.SchIterator_Create;
+                     PIterator.AddFilter_ObjectSet(MkSet(ePin));
+
+                     Pin := PIterator.FirstSchObject;
+                     While Pin <> Nil Do
+                     Begin
+                         CompBall := Pin.Designator;
+
+                         If CompBall = CSVBall Then
+                            Begin
+                                 StringToCoordUnit(CSVLenStr, CSVLenCoord, eImperial);
+
+                                 pin.PinPackageLength := CSVLenCoord; // Set Pin Length
+                                 Result := True;
+                            End;
+
+                         Pin := PIterator.NextSchObject;
+                     End;
+                 Finally
+                     AComponent.SchIterator_Destroy(PIterator);
+                 End;
+
+             AComponent := Iterator.NextSchObject;
+         End;
+     Finally
+         CurrentSch.SchIterator_Destroy(Iterator);
+     End;
+End;
+{..............................................................................}
+
+{..............................................................................}
 Procedure TImportPinsForm.ButtonImportClick(Sender: TObject);
 Var
-    SchPin           : ISch_Pin      ;
+    //CurrentSch       : ISch_Sheet    ;
+    //Iterator   : ISch_Iterator;
+    //PIterator  : ISch_Iterator;
+    //AComponent : ISch_Component;
+    //SchPin           : ISch_Pin      ;
     ValuesCount      : Integer       ;
     i, j, k, l       : Integer       ;
     TxtFieldValue    : String        ;
@@ -124,8 +189,10 @@ Var
     Location         : TLocation     ;
     PinLocX, PinLocY : Integer       ;
     PinLocMapped     : Boolean       ;
-    PackageLenCoord  : TCoord        ;
-    PackageBall      : String        ;
+    //CSVLenCoord      : TCoord        ;
+    CSVBall          : String        ;
+    CSVLenStr        : String        ;
+    //CompBall         : TPCBString    ;
 Begin
     // check if file exists or not
     If Not(FileExists(Edit.Text)) or (Edit.Text = '') Then
@@ -136,13 +203,52 @@ Begin
 
     StrList := TStringList.Create;
     Try
-        StrList.LoadFromFile(Edit.Text);
+        StrList.LoadFromFile(Edit.Text); // CSV with pin/package lengths
+
+        // Check if schematic server exists or not.
+        //If SchServer = Nil Then Exit;
+
+        // Obtain the current schematic document interface.
+        //CurrentSch := SchServer.GetCurrentSchDocument;
+        //If CurrentSch = Nil Then Exit;
+
+        // Look for components only
+        //Iterator := CurrentSch.SchIterator_Create;
+        //Iterator.AddFilter_ObjectSet(MkSet(eSchComponent));
+
+        //Try
+        //    AComponent := Iterator.FirstSchObject;
+        //    While AComponent <> Nil Do
+        //    Begin
+        //        CompDes := AComponent.Designator.Text;
+        //
+        //        If CompDes = 'U1' Then
+        //            Try
+        //                PIterator := AComponent.SchIterator_Create;
+        //                PIterator.AddFilter_ObjectSet(MkSet(ePin));
+        //
+        //                Pin := PIterator.FirstSchObject;
+        //                While Pin <> Nil Do
+        //                Begin
+        //                    CompBall := Pin.Designator;
+        //
+        //                    pin.PinPackageLength := 0; // Set Pin Length
+        //                    Pin := PIterator.NextSchObject;
+        //                End;
+        //            Finally
+        //                AComponent.SchIterator_Destroy(PIterator);
+        //            End;
+        //
+        //        ReportList.Add('');
+        //        AComponent := Iterator.NextSchObject;
+        //    End;
+        //Finally
+        //    CurrentSch.SchIterator_Destroy(Iterator);
+        //End;
 
         // Iterate Rows
         For j := 1 To StrList.Count-1 Do
         Begin
-            //SchPin       := SchServer.SchObjectFactory(ePin,eCreate_GlobalCopy);
-            //PinLocMapped := False;
 
             For i := 0 To ListView.Items.Count-1 Do
             Begin
@@ -170,16 +276,17 @@ Begin
 
                     If PinProperty = 'DESIGNATOR' Then
                         Begin
-                            PackageBall := TxtFieldValue;
-                            ShowMessage('Ball: ' + PackageBall);
+                            CSVBall := TxtFieldValue;
                         End
                     Else If PinProperty = 'LENGTH' Then
                         Begin
-                            StringToCoordUnit(TxtFieldValue, PackageLenCoord, 0);
-                            ShowMessage('Length: ' + TxtFieldValue);
+                            CSVLenStr := TxtFieldValue;
                         End
                 End;
             End;
+            // Check csv against component pin length
+            UpdatePinLength(CSVBall, CSVLenStr);
+            //ShowMessage('CSV Ball: ' + CSVBall + ', CSV Length: ' + CSVLenStr);
         End;
     Finally
         StrList.Free;
