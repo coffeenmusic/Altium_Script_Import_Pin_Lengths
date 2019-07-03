@@ -20,14 +20,12 @@ Type
   TImportPinsForm = class(TForm)
     ButtonBrowse        : TButton;
     ButtonUpdateMapping : TButton;
-    ButtonChangeMapping : TButton;
     ButtonImport        : TButton;
     ListView            : TListView;
     OpenDialog          : TOpenDialog;
     Edit                : TEdit;
     procedure ButtonBrowseClick(Sender: TObject);
     procedure ButtonUpdateMappingClick(Sender: TObject);
-    procedure ButtonChangeMappingClick(Sender: TObject);
     procedure ButtonImportClick(Sender: TObject);
   End;
 
@@ -93,24 +91,8 @@ End;
 {..............................................................................}
 
 {..............................................................................}
-Procedure TImportPinsForm.ButtonChangeMappingClick(Sender: TObject);
-Begin
-    If ListView.ItemIndex = -1 Then
-    Begin
-        ShowMessage('Select a text field to map');
-        Exit;
-    End;
-
-    FormChangeMapping.LabelTextField.Caption := ListView.Items[ListView.ItemIndex].Caption;
-    If FormChangeMapping.ShowModal = mrOk Then
-    Begin
-        ListView.Items[ListView.ItemIndex].SubItems.Strings[0]:=(FormChangeMapping.ComboBox.Text);
-        ListView.Items[ListView.ItemIndex].Checked := FormChangeMapping.CheckBox.Checked;
-    End;
-End;
-{..............................................................................}
-
-{..............................................................................}
+// Iterate through pins on the selected schematic symbol, check if they match
+// the selected pin and if they do update the length
 Function UpdatePinLength(CSVBall: TPCBString, CSVLenStr: String): Boolean;
 Var
      CurrentSch       : ISch_Sheet             ;
@@ -175,24 +157,16 @@ End;
 {..............................................................................}
 Procedure TImportPinsForm.ButtonImportClick(Sender: TObject);
 Var
-    //CurrentSch       : ISch_Sheet    ;
-    //Iterator   : ISch_Iterator;
-    //PIterator  : ISch_Iterator;
-    //AComponent : ISch_Component;
-    //SchPin           : ISch_Pin      ;
     ValuesCount      : Integer       ;
     i, j, k, l       : Integer       ;
     TxtFieldValue    : String        ;
     PinProperty      : String        ;
     StrList          : TStringList   ;
-
     Location         : TLocation     ;
     PinLocX, PinLocY : Integer       ;
     PinLocMapped     : Boolean       ;
-    //CSVLenCoord      : TCoord        ;
     CSVBall          : String        ;
     CSVLenStr        : String        ;
-    //CompBall         : TPCBString    ;
 Begin
     // check if file exists or not
     If Not(FileExists(Edit.Text)) or (Edit.Text = '') Then
@@ -205,48 +179,7 @@ Begin
     Try
         StrList.LoadFromFile(Edit.Text); // CSV with pin/package lengths
 
-        // Check if schematic server exists or not.
-        //If SchServer = Nil Then Exit;
-
-        // Obtain the current schematic document interface.
-        //CurrentSch := SchServer.GetCurrentSchDocument;
-        //If CurrentSch = Nil Then Exit;
-
-        // Look for components only
-        //Iterator := CurrentSch.SchIterator_Create;
-        //Iterator.AddFilter_ObjectSet(MkSet(eSchComponent));
-
-        //Try
-        //    AComponent := Iterator.FirstSchObject;
-        //    While AComponent <> Nil Do
-        //    Begin
-        //        CompDes := AComponent.Designator.Text;
-        //
-        //        If CompDes = 'U1' Then
-        //            Try
-        //                PIterator := AComponent.SchIterator_Create;
-        //                PIterator.AddFilter_ObjectSet(MkSet(ePin));
-        //
-        //                Pin := PIterator.FirstSchObject;
-        //                While Pin <> Nil Do
-        //                Begin
-        //                    CompBall := Pin.Designator;
-        //
-        //                    pin.PinPackageLength := 0; // Set Pin Length
-        //                    Pin := PIterator.NextSchObject;
-        //                End;
-        //            Finally
-        //                AComponent.SchIterator_Destroy(PIterator);
-        //            End;
-        //
-        //        ReportList.Add('');
-        //        AComponent := Iterator.NextSchObject;
-        //    End;
-        //Finally
-        //    CurrentSch.SchIterator_Destroy(Iterator);
-        //End;
-
-        // Iterate Rows
+        // Iterate CSV Rows
         For j := 1 To StrList.Count-1 Do
         Begin
 
@@ -286,7 +219,6 @@ Begin
             End;
             // Check csv against component pin length
             UpdatePinLength(CSVBall, CSVLenStr);
-            //ShowMessage('CSV Ball: ' + CSVBall + ', CSV Length: ' + CSVLenStr);
         End;
     Finally
         StrList.Free;

@@ -66,22 +66,13 @@ object ImportPinsForm: TImportPinsForm
     TabOrder = 2
     ViewStyle = vsReport
   end
-  object ButtonChangeMapping: TButton
-    Left = 144
-    Top = 296
-    Width = 128
-    Height = 25
-    Caption = 'Change Mapping ...'
-    TabOrder = 3
-    OnClick = ButtonChangeMappingClick
-  end
   object ButtonUpdateMapping: TButton
     Left = 8
     Top = 296
     Width = 128
     Height = 25
     Caption = 'Update Mapping'
-    TabOrder = 4
+    TabOrder = 3
     OnClick = ButtonUpdateMappingClick
   end
   object ButtonImport: TButton
@@ -90,7 +81,7 @@ object ImportPinsForm: TImportPinsForm
     Width = 75
     Height = 25
     Caption = 'Execute'
-    TabOrder = 5
+    TabOrder = 4
     OnClick = ButtonImportClick
   end
   object OpenDialog: TOpenDialog
