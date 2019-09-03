@@ -3,7 +3,7 @@ object ImportPinsForm: TImportPinsForm
   Top = 90
   BorderStyle = bsDialog
   Caption = 'Pins Importer'
-  ClientHeight = 329
+  ClientHeight = 102
   ClientWidth = 426
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -22,13 +22,6 @@ object ImportPinsForm: TImportPinsForm
     Height = 13
     Caption = 'CSV Format File to import:'
   end
-  object LabelMapFields: TLabel
-    Left = 8
-    Top = 56
-    Width = 156
-    Height = 13
-    Caption = 'Map the fields you wish to import:'
-  end
   object Edit: TEdit
     Left = 8
     Top = 24
@@ -45,51 +38,21 @@ object ImportPinsForm: TImportPinsForm
     TabOrder = 1
     OnClick = ButtonBrowseClick
   end
-  object ListView: TListView
+  object ButtonRun: TButton
     Left = 8
     Top = 72
-    Width = 409
-    Height = 217
-    Checkboxes = True
-    Columns = <
-      item
-        Caption = 'Text Field'
-        Width = 192
-      end
-      item
-        Caption = 'Pin Property'
-        Width = 192
-      end>
-    HideSelection = False
-    ReadOnly = True
-    RowSelect = True
+    Width = 408
+    Height = 25
+    Caption = 'Run'
     TabOrder = 2
-    ViewStyle = vsReport
-  end
-  object ButtonUpdateMapping: TButton
-    Left = 8
-    Top = 296
-    Width = 128
-    Height = 25
-    Caption = 'Update Mapping'
-    TabOrder = 3
-    OnClick = ButtonUpdateMappingClick
-  end
-  object ButtonImport: TButton
-    Left = 344
-    Top = 296
-    Width = 75
-    Height = 25
-    Caption = 'Execute'
-    TabOrder = 4
-    OnClick = ButtonImportClick
+    OnClick = ButtonRunClick
   end
   object OpenDialog: TOpenDialog
     Filter = 
       'Comma Separated Values (*.csv)|*.CSV|Text files (*.txt)|*.TXT|Al' +
       'l Files (*.*)|*.*'
     Title = 'Open'
-    Left = 344
-    Top = 144
+    Left = 8
+    Top = 56
   end
 end

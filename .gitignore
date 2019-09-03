@@ -1,3 +1,5 @@
-__Previews/
+/History/*
+/Archive/*
+/__Previews/*
 *.pasPreview
 *.csv

@@ -8,10 +8,12 @@
 {  1/ Select the component in schematic that is going to be updated            }
 {  2/ Execute the ImportPins procedure and the Pins Importer dialog appears    }
 {  3/ Click on browse button to load in the CSV file of schematic pins data.   }
-{  4/ Click on the Update Mapping button to refresh the links between          }
-{     text fields and pin properties, then click on Execute button to generate }
-{     the pin length data for the selected component                           }
-{                                                                              }
+{  4/ Click Run Button                                                         }
+{  5/ Check lengths in schematic:                                              }
+{            - Right click on schematic symbol and Select Properties           }
+{            - In the new window click 'Edit Pins...' in the botttom left      }
+{            - This should allow you to review the pin package lengths         }
+{  Note: Built on Altium 16.1 so menu options and locations may have changed   }
 {..............................................................................}
 
 {..............................................................................}
@@ -19,14 +21,11 @@ Interface
 Type
   TImportPinsForm = class(TForm)
     ButtonBrowse        : TButton;
-    ButtonUpdateMapping : TButton;
-    ButtonImport        : TButton;
-    ListView            : TListView;
+    ButtonRun           : TButton;
     OpenDialog          : TOpenDialog;
     Edit                : TEdit;
     procedure ButtonBrowseClick(Sender: TObject);
-    procedure ButtonUpdateMappingClick(Sender: TObject);
-    procedure ButtonImportClick(Sender: TObject);
+    procedure ButtonRunClick(Sender: TObject);
   End;
 
 Var
@@ -38,55 +37,6 @@ Var
 Procedure TImportPinsForm.ButtonBrowseClick(Sender: TObject);
 Begin
     If OpenDialog.Execute Then Edit.Text := OpenDialog.FileName;
-End;
-{..............................................................................}
-
-{..............................................................................}
-Procedure AddListViewItem(ItemIndex: Integer; ItemCaption: String);
-Var
-    i : Integer ;
-Begin
-    ListView.Items.Add;
-    ListView.Items[ItemIndex].Caption := ItemCaption;
-    For i := 0 To FormChangeMapping.ComboBox.Items.Count-1 Do
-        If UpperCase(ItemCaption) = UpperCase(FormChangeMapping.ComboBox.Items[i]) Then
-        Begin
-            ListView.Items[ItemIndex].SubItems.Add(FormChangeMapping.ComboBox.Items[i]);
-            ListView.Items[ItemIndex].Checked := True;
-            Exit;
-        End;
-    ListView.Items[ItemIndex].SubItems.Add('');
-End;
-{..............................................................................}
-
-{..............................................................................}
-procedure TImportPinsForm.ButtonUpdateMappingClick(Sender: TObject);
-Var
-    StrList     : TStringList ;
-    ValuesCount : Integer     ;
-    i, j        : Integer     ;
-Begin
-    If Edit.Text = '' Then Exit;
-
-    StrList := TStringList.Create;
-    Try
-        StrList.LoadFromFile(Edit.Text);
-        ListView.Clear;
-
-        ValuesCount := 1 ;
-        j           := 1 ;
-        For i := 1 To Length(StrList[0]) Do
-            If (Copy(StrList[0], i, 1) = ',') Then
-            Begin
-                AddListViewItem(ValuesCount-1, Copy(StrList[0], j, i-j));
-                j := i+1;
-                Inc(ValuesCount);
-            End;
-        If ValuesCount > 1 Then
-            AddListViewItem(ValuesCount-1, Copy(StrList[0], j, Length(StrList[0])+1-j));
-    Finally
-        StrList.Free;
-    End;
 End;
 {..............................................................................}
 
@@ -155,12 +105,16 @@ End;
 {..............................................................................}
 
 {..............................................................................}
-Procedure TImportPinsForm.ButtonImportClick(Sender: TObject);
+Procedure TImportPinsForm.ButtonRunClick(Sender: TObject);
+Const
+    COL_CNT = 2;
+    DESIGNATOR_COL = 0;
+    LENGTH_COL = 1;
 Var
     ValuesCount      : Integer       ;
-    i, j, k, l       : Integer       ;
+    i, k             : Integer       ;
+    csv_row, char_cnt : Integer;
     TxtFieldValue    : String        ;
-    PinProperty      : String        ;
     StrList          : TStringList   ;
     Location         : TLocation     ;
     PinLocX, PinLocY : Integer       ;
@@ -180,42 +134,38 @@ Begin
         StrList.LoadFromFile(Edit.Text); // CSV with pin/package lengths
 
         // Iterate CSV Rows
-        For j := 1 To StrList.Count-1 Do
+        For csv_row := 1 To StrList.Count-1 Do
         Begin
-
-            For i := 0 To ListView.Items.Count-1 Do
+            For i := 0 To COL_CNT-1 Do
             Begin
-                If ListView.Items[i].Checked Then
-                Begin
-                    TxtFieldValue := '';
-                    ValuesCount   := 1 ;
-                    k             := 1 ;
-                    For l := 1 To Length(StrList[j]) Do
-                        If (Copy(StrList[j], l, 1) = ',') Then
+                TxtFieldValue := '';
+                ValuesCount   := 1 ;
+                k             := 1 ;
+                // For each character in csv row
+                For char_cnt := 1 To Length(StrList[csv_row]) Do
+                    // If delimeter character reached, else skip
+                    If (Copy(StrList[csv_row], char_cnt, 1) = ',') Then
+                    Begin
+                        If ValuesCount = i+1 Then
                         Begin
-                            If ValuesCount = i+1 Then
-                            Begin
-                                TxtFieldValue := Copy(StrList[j], k, l-k);
-                                k := l+1;
-                                Inc(ValuesCount);
-                                Break;
-                            End;
-                            k := l+1;
+                            TxtFieldValue := Copy(StrList[csv_row], k, char_cnt-k);
+                            k := char_cnt+1;
                             Inc(ValuesCount);
+                            Break;
                         End;
-                    If ValuesCount = i+1 Then TxtFieldValue := Copy(StrList[j], k, Length(StrList[j])+1-k);
+                        k := char_cnt+1;
+                        Inc(ValuesCount);
+                    End;
+                If ValuesCount = i+1 Then TxtFieldValue := Copy(StrList[csv_row], k, Length(StrList[csv_row])+1-k);
 
-                    PinProperty := UpperCase(ListView.Items[i].SubItems.Strings[0]);
-
-                    If PinProperty = 'DESIGNATOR' Then
-                        Begin
-                            CSVBall := TxtFieldValue;
-                        End
-                    Else If PinProperty = 'LENGTH' Then
-                        Begin
-                            CSVLenStr := TxtFieldValue;
-                        End
-                End;
+                If i = DESIGNATOR_COL Then
+                    Begin
+                        CSVBall := TxtFieldValue;
+                    End
+                Else If i = LENGTH_COL Then
+                    Begin
+                        CSVLenStr := TxtFieldValue;
+                    End
             End;
             // Check csv against component pin length
             UpdatePinLength(CSVBall, CSVLenStr);
