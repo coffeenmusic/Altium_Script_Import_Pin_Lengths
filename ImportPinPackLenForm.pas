@@ -24,6 +24,7 @@ Type
     ButtonRun           : TButton;
     OpenDialog          : TOpenDialog;
     Edit                : TEdit;
+    cbPropDelay: TCheckBox;
     procedure ButtonBrowseClick(Sender: TObject);
     procedure ButtonRunClick(Sender: TObject);
   End;
@@ -43,7 +44,7 @@ End;
 {..............................................................................}
 // Iterate through pins on the selected schematic symbol, check if they match
 // the selected pin and if they do update the length
-Function UpdatePinLength(CSVBall: TPCBString, CSVLenStr: String): Boolean;
+Function UpdatePinLength(CSVBall: TPCBString, CSVLenStr: String, PropogationDelay: Boolean): Boolean;
 Var
      CurrentSch       : ISch_Sheet             ;
      Iterator         : ISch_Iterator          ;
@@ -84,9 +85,17 @@ Begin
 
                          If CompBall = CSVBall Then
                             Begin
-                                 StringToCoordUnit(CSVLenStr, CSVLenCoord, eImperial);
 
-                                 pin.PinPackageLength := CSVLenCoord; // Set Pin Length
+                                 If PropogationDelay Then
+                                 Begin
+                                     pin.PropagationDelay := StrToFloat(CSVLenStr)*1e-12; // Set Pin Propogation Delay
+                                 End
+                                 Else
+                                 Begin
+                                     StringToCoordUnit(CSVLenStr, CSVLenCoord, eImperial);
+                                     pin.PinPackageLength := CSVLenCoord;
+                                 End;
+
                                  Result := True;
                             End;
 
@@ -168,7 +177,7 @@ Begin
                     End
             End;
             // Check csv against component pin length
-            UpdatePinLength(CSVBall, CSVLenStr);
+            UpdatePinLength(CSVBall, CSVLenStr, cbPropDelay.Checked);
         End;
     Finally
         StrList.Free;
@@ -192,7 +201,7 @@ Begin
     If SchDoc = Nil Then Exit;
 
     // check if it is a schematic library document
-    If Not SchDoc.IsLibrary Then Exit;
+    //If Not SchDoc.IsLibrary Then Exit;
 
     ImportPinsForm.ShowModal;
 End;

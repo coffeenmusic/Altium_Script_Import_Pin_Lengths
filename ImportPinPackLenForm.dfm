@@ -47,6 +47,14 @@ object ImportPinsForm: TImportPinsForm
     TabOrder = 2
     OnClick = ButtonRunClick
   end
+  object cbPropDelay: TCheckBox
+    Left = 12
+    Top = 50
+    Width = 156
+    Height = 17
+    Caption = 'Use Propogation Delay (ps)'
+    TabOrder = 3
+  end
   object OpenDialog: TOpenDialog
     Filter = 
       'Comma Separated Values (*.csv)|*.CSV|Text files (*.txt)|*.TXT|Al' +
