@@ -64,16 +64,22 @@ Begin
      CurrentSch := SchServer.GetCurrentSchDocument;
      If CurrentSch = Nil Then Exit;
 
-     // Look for components only
-     Iterator := CurrentSch.SchIterator_Create;
+     If CurrentSch.ObjectId = eSchLib Then
+     Begin
+         Iterator := CurrentSch.SchLibIterator_Create; // In Library
+     End
+     Else
+     Begin
+         Iterator := CurrentSch.SchIterator_Create; // In Schematic
+     End;
      Iterator.AddFilter_ObjectSet(MkSet(eSchComponent));
 
      Try
          AComponent := Iterator.FirstSchObject;
          While AComponent <> Nil Do
          Begin
-             CompDes := AComponent.Designator.Text;
-             If AComponent.Selection Then
+             CompDes := AComponent.Designator.Text;  
+             If (AComponent.Selection) Or ((CurrentSch.ObjectId = eSchLib) And (CurrentSch.CurrentSchComponent.LibReference = AComponent.LibReference)) Then
                  Try
                      PIterator := AComponent.SchIterator_Create;
                      PIterator.AddFilter_ObjectSet(MkSet(ePin));
